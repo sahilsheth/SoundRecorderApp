@@ -1,6 +1,7 @@
 package com.example.soundrecorder
 
 import android.content.pm.PackageManager
+import android.media.AudioManager
 import android.media.MediaPlayer
 import android.media.MediaRecorder
 import androidx.appcompat.app.AppCompatActivity
@@ -20,6 +21,8 @@ class MainActivity : AppCompatActivity() {
     lateinit var stop: ImageView
     lateinit var startRecording: ImageView
     lateinit var stopRecordng: Button
+    lateinit var playFile: Button
+    lateinit var stopFile: Button
 
     private var accept: Array<String> = arrayOf(
         android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
@@ -42,6 +45,37 @@ class MainActivity : AppCompatActivity() {
         stop = findViewById(R.id.stop)
         startRecording = findViewById(R.id.RecordButton)
         stopRecordng = findViewById(R.id.StopRecording)
+        playFile = findViewById(R.id.playRecFile)
+        stopFile = findViewById(R.id.stopRecFile)
+
+        playFile.setOnClickListener {
+            val file = "Livin' On a Prayer.m4a"
+            val asset = assets.openFd(file)
+            player = MediaPlayer()
+            //reference:  https://www.codota.com/code/java/methods/android.content.res.AssetFileDescriptor/getFileDescriptor
+            //reference: https://stackoverflow.com/questions/3289038/play-audio-file-from-the-assets-directory
+            player.setDataSource(asset.fileDescriptor, asset.startOffset, asset.length)
+            volumeControlStream = AudioManager.STREAM_MUSIC
+            try{
+                player.prepare()
+                player.start()
+                place.text = "Playing audio"
+                playFile.isEnabled = false
+            }catch (error:Exception){
+                error.printStackTrace()
+            }
+        }
+
+        stopFile.setOnClickListener {
+            try{
+                player.stop()
+                player.prepare()
+                player.release()
+                playFile.isEnabled = true
+            } catch (error:Exception){
+                error.printStackTrace()
+            }
+        }
 
         startRecording.setOnClickListener {
 
