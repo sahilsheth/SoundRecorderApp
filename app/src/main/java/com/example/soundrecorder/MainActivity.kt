@@ -6,13 +6,16 @@ import android.media.MediaPlayer
 import android.media.MediaRecorder
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.widget.Button
-import android.widget.ImageView
-import android.widget.TextView
-import android.widget.Toast
+import android.os.SystemClock
+import android.widget.*
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import kotlinx.android.synthetic.main.activity_main.*
 import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
@@ -23,19 +26,25 @@ class MainActivity : AppCompatActivity() {
     lateinit var stopRecordng: Button
     lateinit var playFile: Button
     lateinit var stopFile: Button
+    lateinit var timer:Chronometer
+
 
     private var accept: Array<String> = arrayOf(
         android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
         android.Manifest.permission.RECORD_AUDIO
     )
-
     var pathofFile: String = ""
     private lateinit var recording: MediaRecorder
     private lateinit var player: MediaPlayer
     private var permissionNum: Int = 1000
+    companion object{
+        private const val timeFormating = "yyyyMMdd_HHmmss"
+        fun newStance() = MainActivity()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        //timer = recordTime
         if (!checkPermission()) {
             requestPermission()
         }
@@ -47,6 +56,7 @@ class MainActivity : AppCompatActivity() {
         stopRecordng = findViewById(R.id.StopRecording)
         playFile = findViewById(R.id.playRecFile)
         stopFile = findViewById(R.id.stopRecFile)
+        timer = findViewById(R.id.recordTime)
 
         playFile.setOnClickListener {
             val file = "Livin' On a Prayer.m4a"
@@ -59,6 +69,9 @@ class MainActivity : AppCompatActivity() {
             try{
                 player.prepare()
                 player.start()
+                //https://stackoverflow.com/questions/10862845/how-to-set-android-chronometer-base-time-from-date-object
+                timer.base = SystemClock.elapsedRealtime()
+                timer.start()
                 place.text = "Playing audio"
                 playFile.isEnabled = false
             }catch (error:Exception){
@@ -68,6 +81,7 @@ class MainActivity : AppCompatActivity() {
 
         stopFile.setOnClickListener {
             try{
+                timer.stop()
                 player.stop()
                 player.prepare()
                 player.release()
@@ -85,6 +99,8 @@ class MainActivity : AppCompatActivity() {
                 try {
                     recording.prepare()
                     recording.start()
+                    timer.base = SystemClock.elapsedRealtime()
+                    timer.start()
                 } catch (e: IOException) {
                     e.printStackTrace()
                 }
@@ -97,6 +113,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         stopRecordng.setOnClickListener {
+            timer.stop()
             recording.stop()
             stopRecordng.isEnabled = false
             play.isEnabled = true
@@ -116,10 +133,12 @@ class MainActivity : AppCompatActivity() {
                 player.setDataSource(pathofFile)
                 player.prepare()
             } catch (e: IOException)
-                {
-                    e.printStackTrace()
-                }
+            {
+                e.printStackTrace()
+            }
             player.start()
+            timer.base = SystemClock.elapsedRealtime()
+            timer.start()
             place.text = "Playing...."
         }
         stop.setOnClickListener {
@@ -129,6 +148,7 @@ class MainActivity : AppCompatActivity() {
             play.isEnabled = true
             if(player != null)
             {
+                timer.stop()
                 player.stop()
                 player.release()
                 place.text="Stop Playing"
@@ -144,6 +164,8 @@ class MainActivity : AppCompatActivity() {
         recording.setAudioEncoder(MediaRecorder.OutputFormat.AMR_NB)
         recording.setOutputFile(pathofFile)
     }
+
+    private fun getCurrentTime()= SimpleDateFormat(timeFormating).format(Calendar.getInstance().timeInMillis)
 
     private fun requestPermission() {
         ActivityCompat.requestPermissions(this, accept, permissionNum)
@@ -173,3 +195,4 @@ class MainActivity : AppCompatActivity() {
     }
 
 }
+
